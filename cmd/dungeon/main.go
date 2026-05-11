@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/shar1mo/dungeon-challenge/internal/app"
 	"github.com/shar1mo/dungeon-challenge/internal/config"
 	"github.com/shar1mo/dungeon-challenge/internal/domain"
 )
@@ -14,13 +15,26 @@ func main() {
 	eventsPath := flag.String("events", "testdata/events", "path to events file")
 	flag.Parse()
 
-	if _, err := config.Load(*configPath); err != nil {
+	cfg, err := config.Load(*configPath)
+	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to load config: %v\n", err)
 		os.Exit(1)
 	}
 
-	if _, err := domain.ReadEvents(*eventsPath); err != nil {
+	events, err := domain.ReadEvents(*eventsPath)
+	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to read events: %v\n", err)
 		os.Exit(1)
+	}
+
+	processor, err := app.NewProcessor(cfg)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to create processor: %v\n", err)
+		os.Exit(1)
+	}
+
+	lines := processor.Process(events)
+	for _, line := range lines {
+		fmt.Println(line)
 	}
 }
