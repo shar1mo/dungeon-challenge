@@ -2,7 +2,9 @@ package config
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
 	"os"
 
 	"github.com/shar1mo/dungeon-challenge/internal/domain"
@@ -26,7 +28,11 @@ func Load(path string) (Config, error) {
 
 	decoder := json.NewDecoder(file)
 	if err := decoder.Decode(&cfg); err != nil {
-		return Config{}, err
+		if errors.Is(err, io.EOF) {
+			return Config{}, fmt.Errorf("config file is empty")
+		}
+
+		return Config{}, fmt.Errorf("decode config json: %w", err)
 	}
 
 	if err := cfg.Validate(); err != nil {
