@@ -33,8 +33,9 @@ func main() {
 		os.Exit(1)
 	}
 
-	lines := processor.Process(events)
-	for _, line := range lines {
+	processor.Process(events)
+
+	for _, line := range processor.OutputWithReport() {
 		fmt.Println(line)
 	}
 }

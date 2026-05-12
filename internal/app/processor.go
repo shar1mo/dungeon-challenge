@@ -23,8 +23,10 @@ const (
 
 type Processor struct {
 	cfg           config.Config
+	closeAt       int
 	players       map[int]*domain.Player
 	clearedFloors map[int]map[int]bool
+	output        []string
 }
 
 func NewProcessor(cfg config.Config) (*Processor, error) {
@@ -32,17 +34,25 @@ func NewProcessor(cfg config.Config) (*Processor, error) {
 		return nil, err
 	}
 
+	closeAt, err := cfg.CloseAtSeconds()
+	if err != nil {
+		return nil, err
+	}
+
 	return &Processor{
 		cfg:           cfg,
+		closeAt:       closeAt,
 		players:       make(map[int]*domain.Player),
 		clearedFloors: make(map[int]map[int]bool),
 	}, nil
 }
 
 func (p *Processor) Process(events []domain.Event) []string {
-	var output []string
-
 	for _, event := range events {
+		if event.TimeSeconds >= p.closeAt {
+			p.closeActivePlayers()
+		}
+
 		player := p.getPlayer(event.PlayerID)
 
 		if player.Finished {
@@ -54,50 +64,59 @@ func (p *Processor) Process(events []domain.Event) []string {
 			player.Finished = true
 			player.FinishedAt = event.TimeSeconds
 
-			output = append(output, formatDisqualified(event.TimeSeconds, player.ID))
+			p.output = append(p.output, formatDisqualified(event.TimeSeconds, player.ID))
 			continue
 		}
 
 		switch event.EventID {
 		case eventRegister:
-			output = append(output, p.handleRegister(player, event))
+			p.output = append(p.output, p.handleRegister(player, event))
 
 		case eventEnterDungeon:
-			output = append(output, p.handleEnterDungeon(player, event))
+			p.output = append(p.output, p.handleEnterDungeon(player, event))
 
 		case eventKillMonster:
-			output = append(output, p.handleKillMonster(player, event))
+			p.output = append(p.output, p.handleKillMonster(player, event))
 
 		case eventNextFloor:
-			output = append(output, p.handleNextFloor(player, event))
+			p.output = append(p.output, p.handleNextFloor(player, event))
 
 		case eventPreviousFloor:
-			output = append(output, p.handlePreviousFloor(player, event))
+			p.output = append(p.output, p.handlePreviousFloor(player, event))
 
 		case eventEnterBossFloor:
-			output = append(output, p.handleEnterBossFloor(player, event))
+			p.output = append(p.output, p.handleEnterBossFloor(player, event))
 
 		case eventKillBoss:
-			output = append(output, p.handleKillBoss(player, event))
+			p.output = append(p.output, p.handleKillBoss(player, event))
 
 		case eventLeaveDungeon:
-			output = append(output, p.handleLeaveDungeon(player, event))
+			p.output = append(p.output, p.handleLeaveDungeon(player, event))
 
 		case eventCannotContinue:
-			output = append(output, p.handleCannotContinue(player, event))
+			p.output = append(p.output, p.handleCannotContinue(player, event))
 
 		case eventRestoreHealth:
-			output = append(output, p.handleRestoreHealth(player, event))
+			p.output = append(p.output, p.handleRestoreHealth(player, event))
 
 		case eventReceiveDamage:
-			output = append(output, p.handleReceiveDamage(player, event)...)
+			p.output = append(p.output, p.handleReceiveDamage(player, event)...)
 
 		default:
-			output = append(output, formatImpossibleMove(event.TimeSeconds, player.ID, event.EventID))
+			p.output = append(p.output, formatImpossibleMove(event.TimeSeconds, player.ID, event.EventID))
 		}
 	}
 
-	return output
+	p.closeActivePlayers()
+
+	return p.output
+}
+
+func (p *Processor) OutputWithReport() []string {
+	result := make([]string, 0, len(p.output)+1+len(p.players))
+	result = append(result, p.output...)
+	result = append(result, p.Report()...)
+	return result
 }
 
 func (p *Processor) getPlayer(id int) *domain.Player {
@@ -119,6 +138,27 @@ func (p *Processor) normalFloors() int {
 
 func (p *Processor) isActive(player *domain.Player) bool {
 	return player.Registered && player.Started && !player.Finished
+}
+
+func (p *Processor) isDungeonCompleted(player *domain.Player) bool {
+	return player.ClearedFloors == p.normalFloors() && player.BossKilled
+}
+
+func (p *Processor) closeActivePlayers() {
+	for _, player := range p.players {
+		if !p.isActive(player) {
+			continue
+		}
+
+		player.Finished = true
+		player.FinishedAt = p.closeAt
+
+		if p.isDungeonCompleted(player) {
+			player.State = domain.StateSuccess
+		} else {
+			player.State = domain.StateFail
+		}
+	}
 }
 
 func (p *Processor) isFloorCleared(player *domain.Player, floor int) bool {
@@ -157,7 +197,7 @@ func (p *Processor) handleKillMonster(player *domain.Player, event domain.Event)
 		return formatImpossibleMove(event.TimeSeconds, player.ID, event.EventID)
 	}
 
-	if player.OnBossFloor {
+	if player.OnBossFloor || player.CurrentFloor > p.normalFloors() {
 		return formatImpossibleMove(event.TimeSeconds, player.ID, event.EventID)
 	}
 
@@ -189,7 +229,7 @@ func (p *Processor) handleNextFloor(player *domain.Player, event domain.Event) s
 		return formatImpossibleMove(event.TimeSeconds, player.ID, event.EventID)
 	}
 
-	if player.CurrentFloor >= p.normalFloors() {
+	if player.CurrentFloor > p.normalFloors() {
 		return formatImpossibleMove(event.TimeSeconds, player.ID, event.EventID)
 	}
 
@@ -276,7 +316,7 @@ func (p *Processor) handleLeaveDungeon(player *domain.Player, event domain.Event
 	player.Finished = true
 	player.FinishedAt = event.TimeSeconds
 
-	if player.ClearedFloors == p.normalFloors() && player.BossKilled {
+	if p.isDungeonCompleted(player) {
 		player.State = domain.StateSuccess
 	} else {
 		player.State = domain.StateFail
@@ -313,16 +353,12 @@ func (p *Processor) handleRestoreHealth(player *domain.Player, event domain.Even
 
 func (p *Processor) handleReceiveDamage(player *domain.Player, event domain.Event) []string {
 	if !p.isActive(player) {
-		return []string{
-			formatImpossibleMove(event.TimeSeconds, player.ID, event.EventID),
-		}
+		return []string{formatImpossibleMove(event.TimeSeconds, player.ID, event.EventID)}
 	}
 
 	value, err := strconv.Atoi(event.Extra)
 	if err != nil {
-		return []string{
-			formatImpossibleMove(event.TimeSeconds, player.ID, event.EventID),
-		}
+		return []string{formatImpossibleMove(event.TimeSeconds, player.ID, event.EventID)}
 	}
 
 	player.Health -= value

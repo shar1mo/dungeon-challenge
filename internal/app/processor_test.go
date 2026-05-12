@@ -144,7 +144,7 @@ func newTestProcessor(t *testing.T) *Processor {
 	t.Helper()
 
 	cfg := config.Config{
-		Floors:   2,
+		Floors:   3,
 		Monsters: 2,
 		OpenAt:   "14:05:00",
 		Duration: 2,

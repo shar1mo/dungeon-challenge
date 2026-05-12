@@ -51,7 +51,7 @@ func formatRestoredHealth(timeSeconds int, playerID int, value int) string {
 }
 
 func formatReceivedDamage(timeSeconds int, playerID int, value int) string {
-	return formatEventLine(timeSeconds, fmt.Sprintf("Player [%d] recieved [%d] of damage", playerID, value))
+	return formatEventLine(timeSeconds, fmt.Sprintf("Player [%d] received [%d] of damage", playerID, value))
 }
 
 func formatDisqualified(timeSeconds int, playerID int) string {
