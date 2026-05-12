@@ -23,6 +23,7 @@ const (
 
 type Processor struct {
 	cfg           config.Config
+	openAt        int
 	closeAt       int
 	players       map[int]*domain.Player
 	clearedFloors map[int]map[int]bool
@@ -34,6 +35,11 @@ func NewProcessor(cfg config.Config) (*Processor, error) {
 		return nil, err
 	}
 
+	openAt, err := cfg.OpenAtSeconds()
+	if err != nil {
+		return nil, err
+	}
+
 	closeAt, err := cfg.CloseAtSeconds()
 	if err != nil {
 		return nil, err
@@ -41,6 +47,7 @@ func NewProcessor(cfg config.Config) (*Processor, error) {
 
 	return &Processor{
 		cfg:           cfg,
+		openAt:        openAt,
 		closeAt:       closeAt,
 		players:       make(map[int]*domain.Player),
 		clearedFloors: make(map[int]map[int]bool),
@@ -184,6 +191,10 @@ func (p *Processor) handleEnterDungeon(player *domain.Player, event domain.Event
 		return formatImpossibleMove(event.TimeSeconds, player.ID, event.EventID)
 	}
 
+	if event.TimeSeconds < p.openAt || event.TimeSeconds >= p.closeAt {
+		return formatImpossibleMove(event.TimeSeconds, player.ID, event.EventID)
+	}
+
 	player.Started = true
 	player.EnteredAt = event.TimeSeconds
 	player.FloorEnterTime = event.TimeSeconds
@@ -309,7 +320,7 @@ func (p *Processor) handleKillBoss(player *domain.Player, event domain.Event) st
 }
 
 func (p *Processor) handleLeaveDungeon(player *domain.Player, event domain.Event) string {
-	if !player.Started {
+	if !p.isActive(player) {
 		return formatImpossibleMove(event.TimeSeconds, player.ID, event.EventID)
 	}
 
@@ -343,6 +354,10 @@ func (p *Processor) handleRestoreHealth(player *domain.Player, event domain.Even
 		return formatImpossibleMove(event.TimeSeconds, player.ID, event.EventID)
 	}
 
+	if value < 0 {
+		return formatImpossibleMove(event.TimeSeconds, player.ID, event.EventID)
+	}
+
 	player.Health += value
 	if player.Health > 100 {
 		player.Health = 100
@@ -358,6 +373,10 @@ func (p *Processor) handleReceiveDamage(player *domain.Player, event domain.Even
 
 	value, err := strconv.Atoi(event.Extra)
 	if err != nil {
+		return []string{formatImpossibleMove(event.TimeSeconds, player.ID, event.EventID)}
+	}
+
+	if value < 0 {
 		return []string{formatImpossibleMove(event.TimeSeconds, player.ID, event.EventID)}
 	}
 

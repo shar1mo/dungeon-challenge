@@ -35,7 +35,7 @@ func TestProcessUnregisteredPlayerEntersAndGetsDisqualified(t *testing.T) {
 	})
 
 	want := []string{
-		"[14:00:00] Player [1] disqualified",
+		"[14:00:00] Player [1] is disqualified",
 	}
 
 	assertLines(t, got, want)
@@ -55,7 +55,7 @@ func TestProcessEventAfterDisqualificationIgnored(t *testing.T) {
 	})
 
 	want := []string{
-		"[14:00:00] Player [1] disqualified",
+		"[14:00:00] Player [1] is disqualified",
 	}
 
 	assertLines(t, got, want)
@@ -71,7 +71,7 @@ func TestProcessDoubleRegisterImpossible(t *testing.T) {
 
 	want := []string{
 		"[14:00:00] Player [1] registered",
-		"[14:01:00] Player [1] makes impossible move [1]",
+		"[14:01:00] Player [1] makes imposible move [1]",
 	}
 
 	assertLines(t, got, want)
@@ -108,7 +108,7 @@ func TestProcessLeaveBeforeEnterImpossible(t *testing.T) {
 
 	want := []string{
 		"[14:00:00] Player [1] registered",
-		"[14:05:00] Player [1] makes impossible move [8]",
+		"[14:05:00] Player [1] makes imposible move [8]",
 	}
 
 	assertLines(t, got, want)
@@ -146,7 +146,7 @@ func newTestProcessor(t *testing.T) *Processor {
 	cfg := config.Config{
 		Floors:   3,
 		Monsters: 2,
-		OpenAt:   "14:05:00",
+		OpenAt:   "14:00:00",
 		Duration: 2,
 	}
 

@@ -210,21 +210,21 @@ func TestGoldenSampleInputOutput(t *testing.T) {
 		"[14:00:00] Player [1] registered",
 		"[14:00:00] Player [2] registered",
 		"[14:10:00] Player [2] entered the dungeon",
-		"[14:10:00] Player [3] disqualified",
-		"[14:11:00] Player [2] makes impossible move [5]",
+		"[14:10:00] Player [3] is disqualified",
+		"[14:11:00] Player [2] makes imposible move [5]",
 		"[14:14:00] Player [2] killed the monster",
-		"[14:27:00] Player [2] received [60] of damage",
-		"[14:29:00] Player [2] received [50] of damage",
+		"[14:27:00] Player [2] recieved [60] of damage",
+		"[14:29:00] Player [2] recieved [50] of damage",
 		"[14:29:00] Player [2] is dead",
 		"[14:40:00] Player [1] entered the dungeon",
 		"[14:41:00] Player [1] killed the monster",
-		"[14:44:00] Player [1] received [50] of damage",
+		"[14:44:00] Player [1] recieved [50] of damage",
 		"[14:45:00] Player [1] killed the monster",
 		"[14:48:00] Player [1] went to the next floor",
 		"[14:48:00] Player [1] entered the boss's floor",
-		"[14:49:00] Player [1] received [25] of damage",
+		"[14:49:00] Player [1] recieved [25] of damage",
 		"[14:49:02] Player [1] has restored [80] of health",
-		"[14:50:00] Player [1] received [65] of damage",
+		"[14:50:00] Player [1] recieved [65] of damage",
 		"[14:59:00] Player [1] killed the boss",
 		"[15:04:00] Player [1] left the dungeon",
 		"Final report:",
@@ -265,4 +265,48 @@ func mustClock(value string) int {
 	}
 
 	return seconds
+}
+
+func TestProcessEnterBeforeOpenAtImpossible(t *testing.T) {
+	cfg := config.Config{
+		Floors:   2,
+		Monsters: 2,
+		OpenAt:   "14:05:00",
+		Duration: 2,
+	}
+
+	processor, err := NewProcessor(cfg)
+	if err != nil {
+		t.Fatalf("new processor: %v", err)
+	}
+
+	got := processor.Process([]domain.Event{
+		event("14:00:00", 1, 1, ""),
+		event("14:01:00", 1, 2, ""),
+	})
+
+	want := []string{
+		"[14:00:00] Player [1] registered",
+		"[14:01:00] Player [1] makes imposible move [2]",
+	}
+
+	assertLines(t, got, want)
+}
+
+func TestProcessNegativeDamageImpossible(t *testing.T) {
+	processor := newTestProcessor(t)
+
+	got := processor.Process([]domain.Event{
+		event("14:00:00", 1, 1, ""),
+		event("14:01:00", 1, 2, ""),
+		event("14:02:00", 1, 11, "-10"),
+	})
+
+	want := []string{
+		"[14:00:00] Player [1] registered",
+		"[14:01:00] Player [1] entered the dungeon",
+		"[14:02:00] Player [1] makes imposible move [11]",
+	}
+
+	assertLines(t, got, want)
 }

@@ -51,11 +51,11 @@ func formatRestoredHealth(timeSeconds int, playerID int, value int) string {
 }
 
 func formatReceivedDamage(timeSeconds int, playerID int, value int) string {
-	return formatEventLine(timeSeconds, fmt.Sprintf("Player [%d] received [%d] of damage", playerID, value))
+	return formatEventLine(timeSeconds, fmt.Sprintf("Player [%d] recieved [%d] of damage", playerID, value))
 }
 
 func formatDisqualified(timeSeconds int, playerID int) string {
-	return formatEventLine(timeSeconds, fmt.Sprintf("Player [%d] disqualified", playerID))
+	return formatEventLine(timeSeconds, fmt.Sprintf("Player [%d] is disqualified", playerID))
 }
 
 func formatDead(timeSeconds int, playerID int) string {
@@ -63,5 +63,5 @@ func formatDead(timeSeconds int, playerID int) string {
 }
 
 func formatImpossibleMove(timeSeconds int, playerID int, eventID int) string {
-	return formatEventLine(timeSeconds, fmt.Sprintf("Player [%d] makes impossible move [%d]", playerID, eventID))
+	return formatEventLine(timeSeconds, fmt.Sprintf("Player [%d] makes imposible move [%d]", playerID, eventID))
 }

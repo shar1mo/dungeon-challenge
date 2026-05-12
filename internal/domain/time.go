@@ -36,7 +36,7 @@ func ParseClock(openat string) (int, error) {
 	}
 
 	if hours < 0 || hours > 23 {
-		return 0, fmt.Errorf("hourse out of range: %d", hours)
+		return 0, fmt.Errorf("hours out of range: %d", hours)
 	}
 
 	if minutes < 0 || minutes > 59 {
