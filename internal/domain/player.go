@@ -16,19 +16,19 @@ type Player struct {
 	EnteredAt  int
 	FinishedAt int
 
-	FloorEnterTime       int
-	CurrentFloorKills    int
-	ClearedFloors        int
-	TotalFloorClearTime  int
-	BossEnterTime        int
-	BossKillDuration     int
-	BossKilled           bool
+	FloorEnterTime      int
+	CurrentFloorKills   int
+	ClearedFloors       int
+	TotalFloorClearTime int
+	BossEnterTime       int
+	BossKillDuration    int
+	BossKilled          bool
 }
 
 func NewPlayer(id int) *Player {
 	return &Player{
-		ID: id,
+		ID:     id,
 		Health: 100,
-		State: StateFail,
+		State:  StateFail,
 	}
 }

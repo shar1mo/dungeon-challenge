@@ -18,12 +18,40 @@ func formatEnteredDungeon(timeSeconds int, playerID int) string {
 	return formatEventLine(timeSeconds, fmt.Sprintf("Player [%d] entered the dungeon", playerID))
 }
 
+func formatKilledMonster(timeSeconds int, playerID int) string {
+	return formatEventLine(timeSeconds, fmt.Sprintf("Player [%d] killed the monster", playerID))
+}
+
+func formatWentNextFloor(timeSeconds int, playerID int) string {
+	return formatEventLine(timeSeconds, fmt.Sprintf("Player [%d] went to the next floor", playerID))
+}
+
+func formatWentPreviousFloor(timeSeconds int, playerID int) string {
+	return formatEventLine(timeSeconds, fmt.Sprintf("Player [%d] went to the previous floor", playerID))
+}
+
+func formatEnteredBossFloor(timeSeconds int, playerID int) string {
+	return formatEventLine(timeSeconds, fmt.Sprintf("Player [%d] entered the boss's floor", playerID))
+}
+
+func formatKilledBoss(timeSeconds int, playerID int) string {
+	return formatEventLine(timeSeconds, fmt.Sprintf("Player [%d] killed the boss", playerID))
+}
+
 func formatLeftDungeon(timeSeconds int, playerID int) string {
 	return formatEventLine(timeSeconds, fmt.Sprintf("Player [%d] left the dungeon", playerID))
 }
 
 func formatCannotContinue(timeSeconds int, playerID int, reason string) string {
 	return formatEventLine(timeSeconds, fmt.Sprintf("Player [%d] cannot continue due to [%s]", playerID, reason))
+}
+
+func formatRestoredHealth(timeSeconds int, playerID int, value int) string {
+	return formatEventLine(timeSeconds, fmt.Sprintf("Player [%d] has restored [%d] of health", playerID, value))
+}
+
+func formatReceivedDamage(timeSeconds int, playerID int, value int) string {
+	return formatEventLine(timeSeconds, fmt.Sprintf("Player [%d] recieved [%d] of damage", playerID, value))
 }
 
 func formatDisqualified(timeSeconds int, playerID int) string {
